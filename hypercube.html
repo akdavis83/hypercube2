@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hypercube Visualization</title>
+  <style>
+    body { margin: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+  <script>
+    // Create the scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Function to generate hypercube vertices and edges
+    function generateHypercube(dimensions) {
+      const vertices = [];
+      const edges = [];
+
+      // Generate vertices
+      const vertexCount = Math.pow(2, dimensions);
+      for (let i = 0; i < vertexCount; i++) {
+        const vertex = [];
+        for (let j = 0; j < dimensions; j++) {
+          vertex.push((i >> j) & 1 ? 1 : -1);
+        }
+        vertices.push(vertex);
+      }
+
+      // Generate edges
+      for (let i = 0; i < vertexCount; i++) {
+        for (let j = i + 1; j < vertexCount; j++) {
+          const diff = vertices[i].reduce((sum, val, idx) => sum + Math.abs(val - vertices[j][idx]), 0);
+          if (diff === 2) {
+            edges.push([i, j]);
+          }
+        }
+      }
+
+      return { vertices, edges };
+    }
+
+    // Draw hypercube
+    function drawHypercube(dimensions, offsetX) {
+      const { vertices, edges } = generateHypercube(dimensions);
+
+      // Convert vertices to 3D points
+      const points = vertices.map(v => new THREE.Vector3(
+        (v[0] || 0) + offsetX,
+        (v[1] || 0),
+        (v[2] || 0)
+      ));
+
+      // Draw edges
+      edges.forEach(([i, j]) => {
+        const geometry = new THREE.BufferGeometry().setFromPoints([points[i], points[j]]);
+        const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xffffff }));
+        scene.add(line);
+      });
+    }
+
+    // Generate and display hypercubes H^1 to H^5
+    for (let i = 1; i <= 5; i++) {
+      drawHypercube(i, i * 3); // Offset each hypercube
+    }
+
+    // Set camera position
+    camera.position.z = 10;
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      scene.rotation.y += 0.01; // Rotate the scene for better visualization
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
